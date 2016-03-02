@@ -1,0 +1,323 @@
+﻿{
+    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "storageExistingOrNew": {
+            "type": "string",
+            "allowedValues": [
+                "existing",
+                "new"
+            ]
+        },
+        "storageName": {
+            "type": "string"
+        },
+        "storageType": {
+            "type": "string",
+            "defaultValue": "Standard_LRS",
+            "allowedValues": [
+                "Standard_LRS",
+                "Standard_GRS",
+                "Standard_ZRS"
+            ]
+        },
+        "vnetExistingOrNew": {
+            "type": "string",
+            "allowedValues": [
+                "existing",
+                "new"
+            ]
+        },
+        "vnetName": {
+            "type": "string"
+        },
+        "vnetAddressPrefix": {
+            "type": "string"
+        },
+        "subnetName": {
+            "type": "string"
+        },
+        "subnetPrefix": {
+            "type": "string"
+        },
+        "databaseType": {
+            "type": "string",
+            "allowedValues": [
+                "sqlserver",
+                "sqlserverazure"
+            ],
+            "defaultValue": "sqlserver"
+        },
+        "VM01Name": {
+            "type": "string"
+        },
+        "VM01AdminUsername": {
+            "type": "string"
+        },
+        "VM01AdminPassword": {
+            "type": "securestring"
+        },
+        "DBVMSize": {
+            "type": "string",
+            "defaultValue": "Standard_D3",
+            "allowedValues": [
+                "Standard_A1",
+                "Standard_A2",
+                "Standard_A3",
+                "Standard_A4",
+                "Standard_A11",
+                "Standard_D1",
+                "Standard_D2",
+                "Standard_D3",
+                "Standard_D4",
+                "Standard_D11",
+                "Standard_D12",
+                "Standard_D13",
+                "Standard_D14"
+            ]
+        },
+        "DBUser": {
+            "type": "string"
+        },
+        "DBPassword": {
+            "type": "securestring"
+        },
+        "NodeVMSize": {
+            "type": "string",
+            "defaultValue": "Standard_D3",
+            "allowedValues": [
+                "Standard_A1",
+                "Standard_A2",
+                "Standard_A3",
+                "Standard_A4",
+                "Standard_A11",
+                "Standard_D1",
+                "Standard_D2",
+                "Standard_D3",
+                "Standard_D4",
+                "Standard_D11",
+                "Standard_D12",
+                "Standard_D13",
+                "Standard_D14"
+            ]
+        },
+        "VMOSType": {
+            "type": "string",
+            "allowedValues": [
+                "linux",
+                "windows"
+            ]
+        },
+        "VMAdminUserName": {
+            "type": "string",
+            "minLength": 1
+        },
+        "VMAdminPassword": {
+            "type": "securestring"
+        },
+        "VMNamePrefix": {
+            "type": "string",
+            "minLength": 1
+        },
+        "VMCount": {
+            "type": "int"
+        },
+        "InfaDomainName": {
+            "type": "string",
+            "minLength": 4
+        },
+        "InfaDomainUser": {
+            "type": "string",
+            "minLength": 4
+        },
+        "InfaDomainPassword": {
+            "type": "securestring",
+            "minLength": 4
+        },
+        "InfaKeyWord": {
+            "type": "securestring",
+            "minLength": 4
+        }
+    },
+    "variables": {
+        "baseuri": "https://raw.githubusercontent.com/vijayanand17/tmptest/master/",
+
+        "storageUri": "[concat(variables('baseuri'), 'storage', parameters('storageExistingOrNew'),'.json')]",
+        "vnetUri": "[concat(variables('baseuri'), 'vnet', parameters('vnetExistingOrNew'),'.json')]",
+        "databaseUri": "[concat(variables('baseuri'), parameters('databaseType'),'.json')]",
+
+
+        "nodeUriList": [
+            "nodesingle",
+            "This should never get selected",
+            "nodemultiple"
+        ],
+        "nodeIndex": "[add(mod(add(sub(parameters('VMCount'),2),sub(parameters('VMCount'),1)),2),1)]",
+        "nodeVMUri": "[concat(variables('baseuri'), variables('nodeUriList')[variables('nodeIndex')],'.json')]",
+
+        "InfaNodeNamePrefix": "node"
+    },
+    "resources": [
+        {
+            "name": "storageSetup",
+            "type": "Microsoft.Resources/deployments",
+            "apiVersion": "2015-01-01",
+            "properties": {
+                "mode": "Incremental",
+                "templateLink": {
+                    "uri": "[variables('storageUri')]",
+                    "contentVersion": "1.0.0.0"
+                },
+                "parameters": {
+                    "storageName": {
+                        "value": "[parameters('storageName')]"
+                    },
+                    "storageType": {
+                        "value": "[parameters('storageType')]"
+                    }
+                }
+            }
+        },
+        {
+            "name": "vnetSetup",
+            "type": "Microsoft.Resources/deployments",
+            "apiVersion": "2015-01-01",
+            "dependsOn": [
+                "Microsoft.Resources/deployments/storageSetup"
+            ],
+            "properties": {
+                "mode": "Incremental",
+                "templateLink": {
+                    "uri": "[variables('vnetUri')]",
+                    "contentVersion": "1.0.0.0"
+                },
+                "parameters": {
+                    "vnetName": {
+                        "value": "[parameters('vnetName')]"
+                    },
+                    "vnetAddressPrefix": {
+                        "value": "[parameters('vnetAddressPrefix')]"
+                    },
+                    "subnetName": {
+                        "value": "[parameters('subnetName')]"
+                    },
+                    "subnetPrefix": {
+                        "value": "[parameters('subnetPrefix')]"
+                    }
+                }
+            }
+        },
+        {
+            "name": "databaseSetup",
+            "type": "Microsoft.Resources/deployments",
+            "apiVersion": "2015-01-01",
+            "dependsOn": [
+                "Microsoft.Resources/deployments/storageSetup",
+                "Microsoft.Resources/deployments/vnetSetup"
+            ],
+            "properties": {
+                "mode": "Incremental",
+                "templateLink": {
+                    "uri": "[variables('databaseUri')]",
+                    "contentVersion": "1.0.0.0"
+                },
+                "parameters": {
+                    "VM01Name": {
+                        "value": "[parameters('VM01Name')]"
+                    },
+                    "VM01AdminUsername": {
+                        "value": "[parameters('VM01AdminUsername')]"
+                    },
+                    "VM01AdminPassword": {
+                        "value": "[parameters('VM01AdminPassword')]"
+                    },
+                    "DBVMSize": {
+                        "value": "[parameters('DBVMSize')]"
+                    },
+                    "DBUser": {
+                        "value": "[parameters('DBUser')]"
+                    },
+                    "DBPassword": {
+                        "value": "[parameters('DBPassword')]"
+                    },
+                    "VNetName": {
+                        "value": "[parameters('vnetName')]"
+                    },
+                    "SubnetName": {
+                        "value": "[parameters('subnetName')]"
+                    }
+                }
+            }
+        },
+        {
+            "name": "nodesSetup",
+            "type": "Microsoft.Resources/deployments",
+            "apiVersion": "2015-01-01",
+            "dependsOn": [
+                "Microsoft.Resources/deployments/databaseSetup"
+            ],
+            "properties": {
+                "mode": "Incremental",
+                "templateLink": {
+                    "uri": "[variables('nodeVMUri')]",
+                    "contentVersion": "1.0.0.0"
+                },
+                "parameters": {
+                    "storageName": {
+                        "value": "[parameters('storageName')]"
+                    },
+                    "vnetName": {
+                        "value": "[parameters('vnetName')]"
+                    },
+                    "subnetName": {
+                        "value": "[parameters('subnetName')]"
+                    },
+                    "VM01Name": {
+                        "value": "[parameters('VM01Name')]"
+                    },
+                    "DBUser": {
+                        "value": "[parameters('DBUser')]"
+                    },
+                    "DBPassword": {
+                        "value": "[parameters('DBPassword')]"
+                    },
+                    "NodeVMSize": {
+                        "value": "[parameters('NodeVMSize')]"
+                    },
+                    "VMOSType": {
+                        "value": "[parameters('VMOSType')]"
+                    },
+                    "VMAdminUserName": {
+                        "value": "[parameters('VMAdminUserName')]"
+                    },
+                    "VMAdminPassword": {
+                        "value": "[parameters('VMAdminPassword')]"
+                    },
+                    "VMNamePrefix": {
+                        "value": "[parameters('VMNamePrefix')]"
+                    },
+                    "VMCount": {
+                        "value": "[parameters('VMCount')]"
+                    },
+                    "InfaDomainName": {
+                        "value": "[parameters('InfaDomainName')]"
+                    },
+                    "InfaDomainUser": {
+                        "value": "[parameters('InfaDomainUser')]"
+                    },
+                    "InfaDomainPassword": {
+                        "value": "[parameters('InfaDomainPassword')]"
+                    },
+                    "InfaNodeNamePrefix": {
+                        "value": "[variables('InfaNodeNamePrefix')]"
+                    },
+                    "InfaKeyWord": {
+                        "value": "[parameters('InfaKeyWord')]"
+                    }
+                }
+            }
+        }
+    ],
+    "outputs": {
+    }
+}

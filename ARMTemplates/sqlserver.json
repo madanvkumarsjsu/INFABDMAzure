@@ -1,0 +1,161 @@
+﻿{
+    "$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "VM01Name": {
+            "type": "string"
+        },
+        "VM01AdminUsername": {
+            "type": "string"
+        },
+        "VM01AdminPassword": {
+            "type": "securestring"
+        },
+        "DBVMSize": {
+            "type": "string"
+        },
+        "DBUser": {
+            "type": "string"
+        },
+        "DBPassword": {
+            "type": "securestring"
+        },
+        "VNetName": {
+            "type": "string"
+        },
+        "SubnetName": {
+            "type": "string"
+        }
+    },
+    "variables": {
+        "publicDNSName": "[toLower(concat(parameters('VM01Name'), uniqueString(resourceGroup().id)))]",
+        "VM01NicName": "[concat(parameters('VM01Name'), 'Nic')]",
+        "dbOsType": "windows",
+
+        "ExtScriptURI": "https://raw.githubusercontent.com/vijayanand17/infascripts/master/",
+        "ExtCDBScriptFile": "createsqldbuser.ps1",
+
+        "InfaCustomeDBVMImage": "https://ispstorenp.blob.core.windows.net/copiedvhds/BaseSQL142102201602-os-2016-02-21-11DE904C.vhd",
+        "InfaCustomVMDisk1": "[concat('https://ispstorenp.blob.core.windows.net/copiedvhds/', 'SQLServer2014C01Test.osdisk.vhd')]",
+
+        "VNetID": "[resourceId('Microsoft.Network/virtualNetworks', parameters('VNetName'))]",
+        "SubnetId": "[concat(variables('VNetID'), '/subnets/', parameters('SubnetName'))]"
+    },
+    "resources": [
+        {
+            "name": "[parameters('VM01Name')]",
+            "type": "Microsoft.Network/publicIPAddresses",
+            "location": "[resourceGroup().location]",
+            "apiVersion": "2015-05-01-preview",
+            "dependsOn": [ ],
+            "tags": {
+                "displayName": "PubIP01"
+            },
+            "properties": {
+                "publicIPAllocationMethod": "Dynamic",
+                "dnsSettings": {
+                    "domainNameLabel": "[variables('publicDNSName')]"
+                }
+            }
+        },
+        {
+            "name": "[variables('VM01NicName')]",
+            "type": "Microsoft.Network/networkInterfaces",
+            "location": "[resourceGroup().location]",
+            "apiVersion": "2015-05-01-preview",
+            "dependsOn": [
+                "[concat('Microsoft.Network/publicIPAddresses/', parameters('VM01Name'))]"
+            ],
+            "tags": {
+                "displayName": "VM01Nic"
+            },
+            "properties": {
+                "ipConfigurations": [
+                    {
+                        "name": "ipconfig1",
+                        "properties": {
+                            "privateIPAllocationMethod": "Dynamic",
+                            "subnet": {
+                                "id": "[variables('SubnetId')]"
+                            },
+                            "publicIPAddress": {
+                                "id": "[resourceId('Microsoft.Network/publicIPAddresses', parameters('VM01Name'))]"
+                            }
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "name": "[parameters('VM01Name')]",
+            "type": "Microsoft.Compute/virtualMachines",
+            "location": "[resourceGroup().location]",
+            "apiVersion": "2015-05-01-preview",
+            "dependsOn": [
+                "[concat('Microsoft.Network/networkInterfaces/', variables('VM01NicName'))]"
+            ],
+            "tags": {
+                "displayName": "VM01"
+            },
+            "properties": {
+                "hardwareProfile": {
+                    "vmSize": "[parameters('DBVMSize')]"
+                },
+                "osProfile": {
+                    "computerName": "[parameters('VM01Name')]",
+                    "adminUsername": "[parameters('VM01AdminUsername')]",
+                    "adminPassword": "[parameters('VM01AdminPassword')]"
+                },
+                "storageProfile": {
+                    "osDisk": {
+                        "name": "VM01OSDisk",
+                        "osType": "[variables('dbOsType')]",
+                        "caching": "ReadWrite",
+                        "createOption": "FromImage",
+                        "image": {
+                            "uri": "[variables('InfaCustomeDBVMImage')]"
+                        },
+                        "vhd": {
+                            "uri": "[variables('InfaCustomVMDisk1')]"
+                        }
+                    }
+                },
+                "networkProfile": {
+                    "networkInterfaces": [
+                        {
+                            "id": "[resourceId('Microsoft.Network/networkInterfaces', variables('VM01NicName'))]"
+                        }
+                    ]
+                }
+            },
+            "resources": [
+                {
+                    "name": "ScriptExtDB",
+                    "type": "extensions",
+                    "location": "[resourceGroup().location]",
+                    "apiVersion": "2015-06-15",
+                    "dependsOn": [
+                        "[concat('Microsoft.Compute/virtualMachines/', parameters('VM01Name'))]"
+                    ],
+                    "tags": {
+                        "displayName": "ScriptExtDB"
+                    },
+                    "properties": {
+                        "publisher": "Microsoft.Compute",
+                        "type": "CustomScriptExtension",
+                        "typeHandlerVersion": "1.2",
+                        "autoUpgradeMinorVersion": true,
+                        "settings": {
+                            "fileUris": [
+                                "[concat(variables('ExtScriptURI'),  variables('ExtCDBScriptFile'))]"
+                            ],
+                            "commandToExecute": "[concat('powershell -ExecutionPolicy Unrestricted -file ', variables('ExtCDBScriptFile'), ' -dbUserName ', parameters('DBUser'), ' -dbPassword ', parameters('DBPassword'))]"
+                        }
+                    }
+                }
+            ]
+        }
+    ],
+    "outputs": {
+    }
+}

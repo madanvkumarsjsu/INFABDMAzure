@@ -1,0 +1,72 @@
+﻿{
+    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "storageExistingOrNew": {
+            "value": "existing"
+        },
+        "storageName": {
+            "value": "infastoragetesttwo"
+        },
+        "vnetExistingOrNew": {
+            "value": "existing"
+        },
+        "vnetName": {
+            "value": "infavnetworktwo"
+        },
+        "vnetAddressPrefix": {
+            "value": "10.0.0.0/16"
+        },
+        "subnetName": {
+            "value": "infasubnet"
+        },
+        "subnetPrefix": {
+            "value": "10.0.0.0/24"
+        },
+        "VM01Name": {
+            "value": "dbvmtestsm"
+        },
+        "VM01AdminUsername": {
+            "value": "devuser"
+        },
+        "VM01AdminPassword": {
+            "value": "tempBG@2008"
+        },
+        "DBUser": {
+            "value": "user1"
+        },
+        "DBPassword": {
+            "value": "tempBG@2008"
+        },
+        "VMOSType": {
+            "value": "linux"
+        },
+        "VMAdminUserName": {
+            "value": "devuser"
+        },
+        "VMAdminPassword": {
+            "value": "tempBG@2008"
+        },
+        "VMNamePrefix": {
+            "value": "vmtestsm"
+        },
+        "VMCount": {
+            "value": 2
+        },
+        "InfaDomainName": {
+            "value": "ISPDomain"
+        },
+        "InfaDomainUser": {
+            "value": "admin"
+        },
+        "InfaDomainPassword": {
+            "value": "admin"
+        },
+        "InfaNodeNamePrefix": {
+            "value": "node"
+        },
+        "InfaKeyWord": {
+            "value": "node123"
+        }
+    }
+}

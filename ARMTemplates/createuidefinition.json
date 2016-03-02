@@ -1,0 +1,462 @@
+﻿{
+    "handler": "Microsoft.Compute.MultiVm",
+    "version": "0.0.1-preview",
+    "parameters": {
+        "basics": [
+        ],
+        "steps": [
+            {
+                "name": "nodeVMConfiguration",
+                "label": "Node Settings",
+                "subLabel": {
+                    "preValidation": "Configure the machine settings for the node",
+                    "postValidation": "Done"
+                },
+                "bladeTitle": "Node Settings",
+                "elements": [
+					{
+                        "name": "infavnet",
+                        "type": "Microsoft.Network.VirtualNetworkCombo",
+                        "label": {
+                            "virtualNetwork": "Virtual network",
+                            "subnets": "Subnets"
+                        },
+                        "toolTip": {
+                            "virtualNetwork": "Select same Virtual Network used by HDInsight cluster",
+                            "subnets": ""
+                        },
+                        "defaultValue": {
+                            "name": "InformaticaVNET",
+                            "addressPrefixSize": "/16"
+                        },
+                        "constraints": {
+                            "minAddressPrefixSize": "/29"
+                        },
+                        "subnets": {
+                            "subnet1": {
+                                "label": "Subnet",
+                                "defaultValue": {
+                                    "name": "InfaSubnet",
+                                    "addressPrefixSize": "/24"
+                                },
+                                "constraints": {
+                                    "minAddressPrefixSize": "/29",
+                                    "minAddressCount": 2,
+                                    "requireContiguousAddresses": true
+                                }
+                            }
+                        }
+                    },
+                    {
+                        "name": "storageAccount",
+                        "type": "Microsoft.Storage.StorageAccountSelector",
+                        "label": "Storage account",
+                        "toolTip": "Storage account used for the machines",
+                        "defaultValue": {
+                            "type": "Standard_LRS"
+                        }
+                    },
+                    {
+                        "name": "domainNodeCount",
+                        "type": "Microsoft.Common.TextBox",
+                        "label": "Number of nodes",
+                        "defaultValue": "2",
+                        "toolTip": "",
+                        "constraints": {
+                            "required": true
+                        }
+                    },
+                    {
+                        "name": "nodeVMPrefix",
+                        "type": "Microsoft.Common.TextBox",
+                        "label": "Machine prefix",
+                        "defaultValue": "VM",
+                        "toolTip": "Prefix for the  machines name.",
+                        "constraints": {
+                            "required": true
+                        }
+                    },
+                    {
+                        "name": "nodeVMAdminUsername",
+                        "type": "Microsoft.Compute.UserNameTextBox",
+                        "label": "Username",
+                        "toolTip": "Administrator username for the machines",
+                        "osPlatform": "Windows",
+                        "constraints": {
+                            "required": true
+                        }
+                    },
+                    {
+                        "name": "nodeVMAdminPassword",
+                        "type": "Microsoft.Compute.CredentialsCombo",
+                        "label": {
+                            "password": "Password",
+                            "confirmPassword": "Confirm password"
+                        },
+                        "toolTip": {
+                            "password": "Administrator password for the machines"
+                        },
+                        "osPlatform": "Windows",
+                        "constraints": {
+                            "required": true
+                        }
+                    },
+                    {
+                        "name": "nodeVMSize",
+                        "type": "Microsoft.Compute.SizeSelector",
+                        "label": "Machine size",
+                        "toolTip": "The size of the machine",
+                        "recommendedSizes": [
+                            "Standard_D11",
+                            "Standard_D2"
+                        ],
+                        "constraints": {
+                            "allowedSizes": [
+                                "Standard_A1",
+                                "Standard_A2",
+                                "Standard_A3",
+                                "Standard_A4",
+                                "Standard_A11",
+                                "Standard_D1",
+                                "Standard_D2",
+                                "Standard_D3",
+                                "Standard_D4",
+                                "Standard_D11",
+                                "Standard_D12",
+                                "Standard_D13",
+                                "Standard_D14"
+                            ]
+                        },
+                        "osPlatform": "Windows",
+                        "imageReference": {
+                            "publisher": "MicrosoftSQLServer",
+                            "offer": "SQL2014-WS2012R2",
+                            "sku": "Enterprise"
+                        },
+                        "count": "[steps('nodeVMConfiguration').domainNodeCount]"
+                    }
+                ]
+            },
+            {
+                "name": "databaseConfiguration",
+                "label": "Database settings",
+                "subLabel": {
+                    "preValidation": "Configure the database settings",
+                    "postValidation": "Done"
+                },
+                "bladeTitle": "Database settings",
+                "elements": [
+                    {
+                        "name": "databaseName",
+                        "type": "Microsoft.Common.TextBox",
+                        "label": "Database  machine name",
+                        "constraints": {
+                            "required": true,
+                            "regex": "^[A-Za-z0-9_]{1,30}$",
+                            "validationMessage": "Only alphanumeric characters and underscores are allowed, and the value must be 1-30 characters long"
+                        },
+                        "options": { }
+                    },
+                    {
+                        "name": "databaseVMSize",
+                        "type": "Microsoft.Compute.SizeSelector",
+                        "label": "Database  machine size",
+                        "toolTip": "The size of the machine for the repository database",
+                        "recommendedSizes": [
+                            "Standard_D3",
+                            "Standard_D4",
+                            "Standard_D5"
+                        ],
+                        "constraints": {
+                            "allowedSizes": [
+                                "Standard_A1",
+                                "Standard_A2",
+                                "Standard_A3",
+                                "Standard_A4",
+                                "Standard_A11",
+                                "Standard_D1",
+                                "Standard_D2",
+                                "Standard_D3",
+                                "Standard_D4",
+                                "Standard_D11",
+                                "Standard_D12",
+                                "Standard_D13",
+                                "Standard_D14"
+                            ]
+                        },
+                        "osPlatform": "Windows",
+                        "imageReference": {
+                            "publisher": "MicrosoftSQLServer",
+                            "offer": "SQL2014-WS2012R2",
+                            "sku": "Enterprise"
+                        },
+                        "count": 1
+                    },
+                    {
+                        "name": "dbVMAdminUsername",
+                        "type": "Microsoft.Compute.UserNameTextBox",
+                        "label": "Username",
+                        "toolTip": "Admin username for the  machines",
+                        "osPlatform": "Windows",
+                        "constraints": {
+                            "required": true,
+                            "validationMessage": "Only alphanumeric characters and underscore are allowed, and the value must be 1-30"
+                        }
+                    },
+                    {
+                        "name": "dbVMAdminPassword",
+                        "type": "Microsoft.Compute.CredentialsCombo",
+                        "label": {
+                            "password": "Password",
+                            "confirmPassword": "Confirm password"
+                        },
+                        "toolTip": {
+                            "password": "Admin password for the  machines"
+                        },
+                        "osPlatform": "Windows",
+                        "constraints": {
+                            "required": true
+                        }
+                    },
+                    {
+                        "name": "infaDomainDBUser",
+                        "type": "Microsoft.Common.TextBox",
+                        "label": "Informatica domain DB user",
+                        "defaultValue": "",
+                        "toolTip": "Check Informatica 961HF3 commandline reference document.",
+                        "constraints": {
+                            "required": true,
+                            "regex": "^[a-z0-9A-Z_]{1,30}$",
+                            "validationMessage": "Only alphanumeric characters and underscore are allowed, and the value must be 1-30"
+                        }
+                    },
+                    {
+                        "name": "infaDomainDBPassword",
+                        "type": "Microsoft.Common.PasswordBox",
+                        "label": {
+                            "password": "Informatica domain DB password",
+                            "confirmPassword": "Confirm Informatica domain DB password"
+                        },
+                        "constraints": {
+                            "required": true,
+                            "regex": "^.{4,}$",
+                            "validationMessage": "Password must at least 4 characters in length"
+                        },
+                        "options": {
+                            "hideConfirmation": false
+                        }
+                    }
+                ]
+            },
+            {
+                "label": "Informatica Domain settings",
+                "name": "infaDomainConfiguration",
+                "subLabel": {
+                    "preValidation": "Configure the Informatica Domain settings",
+                    "postValidation": "Done"
+                },
+                "bladeTitle": "Informatica Domain settings",
+                "elements": [
+                    {
+                        "name": "infaDomainName",
+                        "type": "Microsoft.Common.TextBox",
+                        "label": "Informatica domain name",
+                        "defaultValue": "Azure_Domain",
+                        "toolTip": "Check Informatica 961HF3 commandline reference document",
+                        "constraints": {
+                            "required": true,
+                            "regex": "^[a-z0-9A-Z_]{1,30}$",
+                            "validationMessage": "Only alphanumeric characters and underscore are allowed, and the value must be 1-30"
+                        }
+                    },
+                    {
+                        "name": "infaDomainUser",
+                        "type": "Microsoft.Common.TextBox",
+                        "label": "Informatica domain user",
+                        "defaultValue": "Administrator",
+                        "toolTip": "Check Informatica 961HF3 commandline reference document",
+                        "constraints": {
+                            "required": true,
+                            "regex": "^[a-z0-9A-Z_]{1,30}$",
+                            "validationMessage": "Only alphanumeric characters and underscore are allowed, and the value must be 1-30"
+                        }
+                    },
+                    {
+                        "name": "infaDomainPassword",
+                        "type": "Microsoft.Common.PasswordBox",
+                        "label": {
+                            "password": "Informatica domain password",
+                            "confirmPassword": "Confirm Informatica domain password"
+                        },
+                        "constraints": {
+                            "required": true,
+                            "regex": "^.{4,}$",
+                            "validationMessage": "Password must at least 4 characters in length."
+                        },
+                        "options": {
+                            "hideConfirmation": false
+                        }
+
+                    },
+                    {
+                        "name": "infaDomainEncryptionKeyword",
+                        "type": "Microsoft.Common.PasswordBox",
+                        "label": {
+                            "password": "Keyphrase for encryption for domain",
+                            "confirmPassword": "Confirm keyphrase for encryption for domain"
+                        },
+                        "constraints": {
+                            "required": true,
+                            "regex": "^.{8,}$",
+                            "validationMessage": "Keyphrase must at least 8 characters in length"
+                        },
+                        "options": {
+                            "hideConfirmation": true
+                        }
+                    }
+                ]
+            },
+            {
+                "label": "Informatica Big Data Management settings",
+                "name": "infaBDEConfiguration",
+                "subLabel": {
+                    "preValidation": "Configure the Informatica HDInsight Cluster settings",
+                    "postValidation": "Done"
+                },
+                "bladeTitle": "Informatica Big Data Management settings",
+                "elements": [
+                    {
+                        "name": "HDIClusterName",
+                        "type": "Microsoft.Common.TextBox",
+                        "label": "HDInsight Cluster hostname",
+                        "defaultValue": "",
+                        "toolTip": "Check the HDInsight cluster properties under settings",
+                        "constraints": {
+                            "required": true
+                        }
+                    },
+                    {
+                        "name": "HDIClusterLoginUsername",
+                        "type": "Microsoft.Common.TextBox",
+                        "label": "HDInsight Cluster Login Username",
+                        "defaultValue": "",
+                        "toolTip": "Check the HDInsight cluster login under settings. This is usually the credential to login into Ambari",
+                        "constraints": {
+                            "required": true
+                        }
+                    },
+                    {
+                        "name": "HDIClusterLoginPassword",
+                        "type": "Microsoft.Common.PasswordBox",
+                        "label": "HDInsight Cluster Login Password",
+                        "defaultValue": "",
+                        "toolTip": "Check the HDInsight cluster login under settings. This is usually the credential to login into Ambari",
+                        "constraints": {
+                            "required": true
+                        }
+                    },
+                    {
+                        "name": "HDIClusterSSHHostname",
+                        "type": "Microsoft.Common.TextBox",
+                        "label": "HDInsight Cluster SSH hostname",
+                        "defaultValue": "hostname-ssh.azurehdinsight.net",
+                        "toolTip": "HDInsight cluster's headnode SSH hostname"
+                    },
+                    {
+                        "name": "HDIClusterSSHUsername",
+                        "type": "Microsoft.Common.TextBox",
+                        "label": "HDInsight Cluster SSH Username",
+                        "defaultValue": "",
+                        "toolTip": "HDInsight cluster's headnode SSH username",
+                        "constraints": {
+                            "required": true
+                        }
+                    },
+                    {
+                        "name": "HDIClusterSSHPassword",
+                        "type": "Microsoft.Common.PasswordBox",
+                        "label": "HDInsight Cluster SSH Password",
+                        "defaultValue": "",
+                        "toolTip": "HDInsight cluster's headnode SSH password",
+                        "constraints": {
+                            "required": true
+                        }
+                    },
+                    {
+                        "name": "Clusterjobhistory",
+                        "type": "Microsoft.Common.TextBox",
+                        "label": "mapreduce.jobhistory.address",
+                        "defaultValue": "HOSTNAME:10020",
+                        "toolTip": "MapReduce JobHistory Server IPC host:port. Check Map reduce configuration in Ambari.",
+                        "constraints": {
+                            "required": true
+                        }
+                    },
+                    {
+                        "name": "Clusterjobhistorywebapp",
+                        "type": "Microsoft.Common.TextBox",
+                        "label": "mapreduce.jobhistory.webapp.address",
+                        "defaultValue": "HOSTNAME:19888",
+                        "toolTip": "MapReduce JobHistory Server Web UI host:port. Check Map reduce configuration in Ambari.",
+                        "constraints": {
+                            "required": true
+                        }
+                    },
+                    {
+                        "name": "ClusterRMSaddress",
+                        "type": "Microsoft.Common.TextBox",
+                        "label": "yarn.resourcemanager.scheduler.address",
+                        "defaultValue": "HOSTNAME:8030",
+                        "toolTip": "Resource Manager scheduler address host:port. Check yarn configuration in Ambari.",
+                        "constraints": {
+                            "required": true
+                        }
+                    },
+                    {
+                        "name": "ClusterRMWaddress",
+                        "type": "Microsoft.Common.TextBox",
+                        "label": "yarn.resourcemanager.webapp.address",
+                        "defaultValue": "HOSTNAME:8088",
+                        "toolTip": "Resource Manager scheduler web app address host:port. Check yarn configuration in Ambari.",
+                        "constraints": {
+                            "required": true
+                        }
+                    }
+                ]
+            }
+        ],
+
+        "outputs": {
+            "location": "[location()]",
+			"virtualNetworkName": "[steps('nodeVMConfiguration').infavnet.name]",
+			"subnetName": "[steps('nodeVMConfiguration').infavnet.subnets.subnet1.name]",
+			"storageAccountName": "[steps('nodeVMConfiguration').storageAccount.name]",
+			"storageAccountType": "[steps('nodeVMConfiguration').storageAccount.type]",
+			"nodeCount": "[steps('nodeVMConfiguration').domainNodeCount]",
+			"nodeVMPrefix": "[steps('nodeVMConfiguration').nodeVMPrefix]",
+			"nodeVMAdminUsername": "[steps('nodeVMConfiguration').nodeVMAdminUsername]",
+			"nodeVMAdminPassword": "[steps('nodeVMConfiguration').nodeVMAdminPassword]",
+			"nodeVMSize": "[steps('nodeVMConfiguration').nodeVMSize]",
+			"databaseName": "[steps('databaseConfiguration').databaseName]",
+			"databaseVMSize": "[steps('databaseConfiguration').databaseVMSize]",
+			"dbVMAdminUsername": "[steps('databaseConfiguration').dbVMAdminUsername]",
+			"dbVMAdminPassword": "[steps('databaseConfiguration').dbVMAdminPassword]",
+			"infaDomainDBUser": "[steps('databaseConfiguration').infaDomainDBUser]",
+			"infaDomainDBPassword": "[steps('databaseConfiguration').infaDomainDBPassword]",
+			"infaDomainName": "[steps('infaDomainConfiguration').infaDomainName]",
+			"infaDomainUser": "[steps('infaDomainConfiguration').infaDomainUser]",
+			"infaDomainPassword": "[steps('infaDomainConfiguration').infaDomainPassword]",
+			"infaDomainEncryptionKeyword": "[steps('infaDomainConfiguration').infaDomainEncryptionKeyword]",
+			"infaDomainEncryptionKeyword": "[steps('infaBDEConfiguration').HDIClusterName]",
+			"infaDomainEncryptionKeyword": "[steps('infaBDEConfiguration').HDIClusterLoginUsername]",
+			"infaDomainEncryptionKeyword": "[steps('infaBDEConfiguration').HDIClusterLoginPassword]",
+			"infaDomainEncryptionKeyword": "[steps('infaBDEConfiguration').HDIClusterSSHHostname]",
+            "infaDomainEncryptionKeyword": "[steps('infaBDEConfiguration').HDIClusterSSHUsername]",
+            "infaDomainEncryptionKeyword": "[steps('infaBDEConfiguration').HDIClusterSSHPassword]",
+			"infaDomainEncryptionKeyword": "[steps('infaBDEConfiguration').Clusterjobhistory]",
+			"infaDomainEncryptionKeyword": "[steps('infaBDEConfiguration').Clusterjobhistorywebapp]",
+			"infaDomainEncryptionKeyword": "[steps('infaBDEConfiguration').ClusterRMSaddress]",
+			"infaDomainEncryptionKeyword": "[steps('infaBDEConfiguration').ClusterRMWaddress]"
+        }
+    }
+}

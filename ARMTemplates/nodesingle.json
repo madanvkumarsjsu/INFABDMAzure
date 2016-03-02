@@ -1,0 +1,163 @@
+﻿{
+    "$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "storageName": {
+            "type": "string"
+        },
+        "vnetName": {
+            "type": "string"
+        },
+        "subnetName": {
+            "type": "string"
+        },
+        "VM01Name": {
+            "type": "string"
+        },
+        "DBUser": {
+            "type": "string"
+        },
+        "DBPassword": {
+            "type": "securestring"
+        },
+        "NodeVMSize": {
+            "type": "string",
+            "defaultValue": "Standard_D3",
+            "allowedValues": [
+                "Standard_A1",
+                "Standard_A2",
+                "Standard_A3",
+                "Standard_A4",
+                "Standard_A11",
+                "Standard_D1",
+                "Standard_D2",
+                "Standard_D3",
+                "Standard_D4",
+                "Standard_D11",
+                "Standard_D12",
+                "Standard_D13",
+                "Standard_D14"
+            ]
+        },
+        "VMOSType": {
+            "type": "string",
+            "allowedValues": [
+                "linux",
+                "windows"
+            ]
+        },
+        "VMAdminUserName": {
+            "type": "string",
+            "minLength": 1
+        },
+        "VMAdminPassword": {
+            "type": "securestring"
+        },
+        "VMNamePrefix": {
+            "type": "string",
+            "minLength": 1
+        },
+        "VMCount": {
+            "type": "int"
+        },
+        "InfaDomainName": {
+            "type": "string",
+            "minLength": 4
+        },
+        "InfaDomainUser": {
+            "type": "string",
+            "minLength": 4
+        },
+        "InfaDomainPassword": {
+            "type": "securestring",
+            "minLength": 4
+        },
+        "InfaNodeNamePrefix": {
+            "type": "string",
+            "minLength": 4
+        },
+        "InfaKeyWord": {
+            "type": "securestring",
+            "minLength": 4
+        }
+    },
+    "variables": {
+        "baseuri": "https://raw.githubusercontent.com/vijayanand17/tmptest/master/",
+        "nodeVMOSUri": "[concat(variables('baseuri'), 'node', parameters('VMOSType'),'.json')]",
+        "masterNodeIndex": 0
+    },
+    "resources": [
+        {
+            "name": "singleMasterNodeSetup",
+            "type": "Microsoft.Resources/deployments",
+            "apiVersion": "2015-01-01",
+            "dependsOn": [ ],
+            "properties": {
+                "mode": "Incremental",
+                "templateLink": {
+                    "uri": "[variables('nodeVMOSUri')]",
+                    "contentVersion": "1.0.0.0"
+                },
+                "parameters": {
+                    "storageName": {
+                        "value": "[parameters('storageName')]"
+                    },
+                    "vnetName": {
+                        "value": "[parameters('vnetName')]"
+                    },
+                    "subnetName": {
+                        "value": "[parameters('subnetName')]"
+                    },
+                    "VM01Name": {
+                        "value": "[parameters('VM01Name')]"
+                    },
+                    "DBUser": {
+                        "value": "[parameters('DBUser')]"
+                    },
+                    "DBPassword": {
+                        "value": "[parameters('DBPassword')]"
+                    },
+                    "NodeVMSize": {
+                        "value": "[parameters('NodeVMSize')]"
+                    },
+                    "VMOSType": {
+                        "value": "[parameters('VMOSType')]"
+                    },
+                    "VMAdminUserName": {
+                        "value": "[parameters('VMAdminUserName')]"
+                    },
+                    "VMAdminPassword": {
+                        "value": "[parameters('VMAdminPassword')]"
+                    },
+                    "VMNamePrefix": {
+                        "value": "[parameters('VMNamePrefix')]"
+                    },
+                    "VMCount": {
+                        "value": "[parameters('VMCount')]"
+                    },
+                    "Index": {
+                        "value": "[variables('masterNodeIndex')]"
+                    },
+                    "InfaDomainName": {
+                        "value": "[parameters('InfaDomainName')]"
+                    },
+                    "InfaDomainUser": {
+                        "value": "[parameters('InfaDomainUser')]"
+                    },
+                    "InfaDomainPassword": {
+                        "value": "[parameters('InfaDomainPassword')]"
+                    },
+                    "InfaNodeNamePrefix": {
+                        "value": "[parameters('InfaNodeNamePrefix')]"
+                    },
+                    "InfaKeyWord": {
+                        "value": "[parameters('InfaKeyWord')]"
+                    }
+                }
+            }
+        }
+    ],
+    "outputs": {
+        "URI": {"type": "string", "value": "[variables('nodeVMOSUri')]"}
+    }
+}

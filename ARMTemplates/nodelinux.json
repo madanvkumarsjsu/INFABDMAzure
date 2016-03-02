@@ -1,0 +1,249 @@
+﻿{
+    "$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "storageName": {
+            "type": "string"
+        },
+        "vnetName": {
+            "type": "string"
+        },
+        "subnetName": {
+            "type": "string"
+        },
+        "VM01Name": {
+            "type": "string"
+        },
+        "DBUser": {
+            "type": "string"
+        },
+        "DBPassword": {
+            "type": "securestring"
+        },
+        "NodeVMSize": {
+            "type": "string",
+            "defaultValue": "Standard_D3",
+            "allowedValues": [
+                "Standard_A1",
+                "Standard_A2",
+                "Standard_A3",
+                "Standard_A4",
+                "Standard_A11",
+                "Standard_D1",
+                "Standard_D2",
+                "Standard_D3",
+                "Standard_D4",
+                "Standard_D11",
+                "Standard_D12",
+                "Standard_D13",
+                "Standard_D14"
+            ]
+        },
+        "VMOSType": {
+            "type": "string",
+            "allowedValues": [
+                "linux",
+                "windows"
+            ]
+        },
+        "VMAdminUserName": {
+            "type": "string",
+            "minLength": 1
+        },
+        "VMAdminPassword": {
+            "type": "securestring"
+        },
+        "VMNamePrefix": {
+            "type": "string",
+            "minLength": 1
+        },
+        "VMCount": {
+            "type": "int"
+        },
+        "Index": {
+            "type": "int"
+        },
+        "InfaDomainName": {
+            "type": "string",
+            "minLength": 4
+        },
+        "InfaDomainUser": {
+            "type": "string",
+            "minLength": 4
+        },
+        "InfaDomainPassword": {
+            "type": "securestring",
+            "minLength": 4
+        },
+        "InfaNodeNamePrefix": {
+            "type": "string",
+            "minLength": 4
+        },
+        "InfaKeyWord": {
+            "type": "securestring",
+            "minLength": 4
+        },
+        "HDIClusterName": {
+            "type": "string"
+        },
+        "HDIClusterLoginUsername": {
+            "type": "string"
+        },
+        "HDIClusterLoginPassword": {
+            "type": "string"
+        },
+        "HDIClusterSSHHostname": {
+            "type": "string"
+        },
+        "HDIClusterSSHUsername": {
+            "type": "string"
+        },
+        "HDIClusterSSHPassword": {
+            "type": "string"
+        },
+        "Clusterjobhistory": {
+            "type": "string"
+        },
+        "Clusterjobhistorywebapp": {
+            "type": "string"
+        },
+        "ClusterRMSaddress": {
+            "type": "string"
+        },
+        "ClusterRMWaddress": {
+            "type": "string"
+        }
+    },
+    "variables": {
+        "VMPublicDNSName": "[toLower(concat(parameters('VMNamePrefix'), add(parameters('Index'), 1), uniqueString(resourceGroup().id)))]",
+        "VMNicNamePrefix": "[concat(parameters('VMNamePrefix'),'Nic')]",
+        "VMSubnetRef": "[concat(resourceId('Microsoft.Network/virtualNetworks', parameters('vnetName')), '/subnets/', parameters('subnetName'))]",
+
+        "InfaCustomeVMImage": "https://ispstorenp.blob.core.windows.net/copiedvhds/BaseLU14I1018022016-os-2016-02-18-53D8A606.vhd",
+        "ExtScriptURI": "https://raw.githubusercontent.com/vijayanand17/infascripts/master/",
+        "ExtWIScriptFile": "lininfainstaller.sh",
+
+        "InfaNode1Port": 6005,
+        "InfaDBType": "MSSQLSERVER",
+        "InfaDBName": "model",
+        "InfaDBPort": "1433"
+    },
+    "resources": [
+        {
+            "name": "[variables('VMPublicDNSName')]",
+            "type": "Microsoft.Network/publicIPAddresses",
+            "location": "[resourceGroup().location]",
+            "apiVersion": "2015-05-01-preview",
+            "dependsOn": [ ],
+
+            "tags": {
+                "displayName": "publicip"
+            },
+            "properties": {
+                "publicIPAllocationMethod": "Dynamic",
+                "dnsSettings": {
+                    "domainNameLabel": "[variables('VMPublicDNSName')]"
+                }
+            }
+        },
+        {
+            "name": "[concat(variables('VMNicNamePrefix'), add(parameters('Index'), 1))]",
+            "type": "Microsoft.Network/networkInterfaces",
+            "location": "[resourceGroup().location]",
+            "apiVersion": "2015-05-01-preview",
+            "dependsOn": [
+                "[concat('Microsoft.Network/publicIPAddresses/', variables('VMPublicDNSName'))]"
+            ],
+            "tags": {
+                "displayName": "niccard"
+            },
+            "properties": {
+                "ipConfigurations": [
+                    {
+                        "name": "ipconfig1",
+                        "properties": {
+                            "privateIPAllocationMethod": "Dynamic",
+                            "subnet": {
+                                "id": "[variables('VMSubnetRef')]"
+                            },
+                            "publicIPAddress": {
+                                "id": "[resourceId('Microsoft.Network/publicIPAddresses', variables('VMPublicDNSName'))]"
+                            }
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "name": "[concat(parameters('VMNamePrefix'), add(parameters('Index'), 1))]",
+            "type": "Microsoft.Compute/virtualMachines",
+            "location": "[resourceGroup().location]",
+            "apiVersion": "2015-05-01-preview",
+            "dependsOn": [
+                "[concat('Microsoft.Network/networkInterfaces/', variables('VMNicNamePrefix'), add(parameters('Index'), 1))]"
+            ],
+            "tags": {
+                "displayName": "nodevm"
+            },
+            "properties": {
+                "hardwareProfile": {
+                    "vmSize": "[parameters('NodeVMSize')]"
+                },
+                "osProfile": {
+                    "computerName": "[concat(parameters('VMNamePrefix'), add(parameters('Index'), 1))]",
+                    "adminUsername": "[parameters('VMAdminUsername')]",
+                    "adminPassword": "[parameters('VMAdminPassword')]"
+                },
+                "storageProfile": {
+                    "osDisk": {
+                        "name": "VMDisk",
+                        "osType": "linux",
+                        "caching": "ReadWrite",
+                        "createOption": "FromImage",
+                        "image": {
+                            "uri": "[variables('InfaCustomeVMImage')]"
+                        },
+                        "vhd": {
+                            "uri": "[concat('https://ispstorenp.blob.core.windows.net/copiedvhds/', 'InfaBaseVMSMTest', add(parameters('Index'), 1), '.multi.osdisk.vhd')]"
+                        }
+                    }
+                },
+                "networkProfile": {
+                    "networkInterfaces": [
+                        {
+                            "id": "[resourceId('Microsoft.Network/networkInterfaces', concat(variables('VMNicNamePrefix'), add(parameters('Index'), 1)))]"
+                        }
+                    ]
+                }
+            },
+            "resources": [
+                {
+                    "name": "ScriptExtGVM",
+                    "type": "extensions",
+                    "location": "[resourceGroup().location]",
+                    "apiVersion": "2015-06-15",
+                    "dependsOn": [
+                        "[concat('Microsoft.Compute/virtualMachines/', parameters('VMNamePrefix'), add(parameters('Index'), 1))]"
+                    ],
+                    "tags": {
+                        "displayName": "informaticaextension"
+                    },
+                    "properties": {
+                        "publisher": "Microsoft.OSTCExtensions",
+                        "type": "CustomScriptForLinux",
+                        "typeHandlerVersion": "1.4",
+                        "autoUpgradeMinorVersion": true,
+                        "settings": {
+                            "fileUris": [
+                                "[concat(variables('ExtScriptURI'),  variables('ExtWIScriptFile'))]"
+                            ],
+                            "commandToExecute": "[concat('sh ', variables('ExtWIScriptFile'), ' ', concat(parameters('VMNamePrefix'), '1'), ' ', parameters('InfaDomainName'), ' ', parameters('InfaDomainUser'), ' ', parameters('InfaDomainPassword'), ' ', parameters('InfaNodeNamePrefix'), add(parameters('Index'), 1), ' ', variables('InfaNode1Port'), ' ', variables('InfaDBType'), ' ', variables('InfaDBName'), ' ', parameters('DBUser'), ' ', parameters('DBPassword'), ' ', parameters('VM01Name'), ' ', variables('InfaDBPort'), ' ', parameters('InfaKeyWord'), ' ', parameters('Index'), ' ', parameters('VMAdminUserName'), ' ', parameters('storageName'), ' ', listKeys(resourceId('Microsoft.Storage/storageAccounts', parameters('storageName')), providers('Microsoft.Storage', 'storageAccounts').apiVersions[0]).key1)]"
+                        }
+                    }
+                }
+            ]
+        }
+    ],
+    "outputs": {
+    }
+}

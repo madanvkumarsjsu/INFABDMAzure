@@ -1,0 +1,83 @@
+﻿{
+    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "vnetName": {
+            "type": "string"
+        },
+        "vnetAddressPrefix": {
+            "type": "string"
+        },
+        "subnetName": {
+            "type": "string"
+        },
+        "subnetPrefix": {
+            "type": "string"
+        }
+    },
+    "variables": {
+        "NetworkSecurityGroupName": "NetworkSecurityGroup"
+    },
+    "resources": [
+        {
+            "apiVersion": "2015-05-01-preview",
+            "type": "Microsoft.Network/networkSecurityGroups",
+            "name": "[variables('NetworkSecurityGroupName')]",
+            "location": "[resourceGroup().location]",
+            "tags": {
+                "displayName": "NetworkSecurityGroup"
+            },
+            "properties": {
+                "securityRules": [
+                    {
+                        "name": "EndPointRule",
+                        "properties": {
+                            "description": "Enabling endpoints on ports required for Informatica.",
+                            "protocol": "TCP",
+                            "sourcePortRange": "*",
+                            "destinationPortRange": "*",
+                            "sourceAddressPrefix": "*",
+                            "destinationAddressPrefix": "*",
+                            "access": "Allow",
+                            "priority": 100,
+                            "direction": "Inbound"
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "name": "[parameters('vnetName')]",
+            "type": "Microsoft.Network/virtualNetworks",
+            "location": "[resourceGroup().location]",
+            "apiVersion": "2015-05-01-preview",
+            "dependsOn": [
+                "[concat('Microsoft.Network/networkSecurityGroups/', variables('NetworkSecurityGroupName'))]"
+            ],
+            "properties": {
+                "addressSpace": {
+                    "addressPrefixes": [
+                        "[parameters('vnetAddressPrefix')]"
+                    ]
+                },
+                "subnets": [
+                    {
+                        "name": "[parameters('subnetName')]",
+                        "properties": {
+                            "addressPrefix": "[parameters('subnetPrefix')]",
+                            "networkSecurityGroup": {
+                                "id": "[resourceId('Microsoft.Network/networkSecurityGroups', variables('NetworkSecurityGroupName'))]"
+                            }
+                        }
+                    }
+                ]
+            }
+        }
+    ],
+    "outputs": {
+        "vnetId": {
+            "value": "[resourceId('Microsoft.Network/virtualNetworks', parameters('vnetName'))]",
+            "type": "string"
+        }
+    }
+}
